@@ -9,29 +9,39 @@ import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 
-connectDB();
-
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://your-frontend.vercel.app"
-];
+try {
+  await connectDB();
+} catch (err) {
+  console.error(err);
+}
 
 app.use(express.json());
+app.use(cookieParser());
+
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: true,
     credentials: true,
   })
 );
 
-app.use(cookieParser());
-
-// Test Route
 app.get("/", (req, res) => {
-  res.send("API is working...");
+  res.status(200).json({
+    success: true,
+    message: "API Working",
+  });
 });
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
+
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(500).json({
+    success: false,
+    message: err.message,
+  });
+});
 
 export default app;
