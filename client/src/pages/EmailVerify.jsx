@@ -8,10 +8,7 @@ import { AppContext } from "../context/AppContext";
 const EmailVerify = () => {
   axios.defaults.withCredentials = true;
 
-  // ✅ FIX: Use correct context property names (check your AppContext)
   const { backendUrl, getUserData, isLoggedIn, userData } = useContext(AppContext);
-  //                                   ^^^^^^^^^^ (capital 'I') – match your context
-
   const navigate = useNavigate();
   const inputRefs = useRef([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +22,6 @@ const EmailVerify = () => {
   const handleInput = (e, index) => {
     const value = e.target.value.replace(/[^0-9]/g, "");
     e.target.value = value;
-
     if (value && index < inputRefs.current.length - 1) {
       inputRefs.current[index + 1].focus();
     }
@@ -40,12 +36,11 @@ const EmailVerify = () => {
   const handlePaste = (e) => {
     e.preventDefault();
     const pasteData = e.clipboardData.getData("text").slice(0, 6).split("");
-    pasteData.forEach((char, index) => {
-      if (inputRefs.current[index]) {
-        inputRefs.current[index].value = char;
+    pasteData.forEach((char, idx) => {
+      if (inputRefs.current[idx]) {
+        inputRefs.current[idx].value = char;
       }
     });
-    // Auto-submit after paste if all 6 digits filled
     if (pasteData.length === 6) {
       handleSubmit(e);
     }
@@ -54,22 +49,17 @@ const EmailVerify = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       const otp = inputRefs.current.map((input) => input.value).join("");
-
       if (otp.length !== 6) {
         toast.error("Please enter a valid 6-digit OTP");
         triggerShake();
         setIsLoading(false);
         return;
       }
-
       const { data } = await axios.post(`${backendUrl}/api/auth/verify-account`, { otp });
-
       if (data.success) {
         toast.success(data.message);
-        // ✅ Refresh user data to update isAccountVerified
         if (getUserData) await getUserData();
         navigate("/");
       } else {
@@ -85,86 +75,203 @@ const EmailVerify = () => {
     }
   };
 
-  // ✅ Redirect if already verified (avoid loops)
   useEffect(() => {
     if (isLoggedIn && userData?.isAccountVerified) {
       navigate("/");
     }
   }, [isLoggedIn, userData, navigate]);
 
-  // ✅ Fallback: Ensure background and input styles exist (add inline styles if CSS missing)
-  const inputStyle = {
-    width: "3rem",
-    height: "3rem",
-    textAlign: "center",
-    fontSize: "1.5rem",
-    fontWeight: "bold",
-    borderRadius: "0.5rem",
-    border: "1px solid rgba(255,255,255,0.2)",
-    backgroundColor: "rgba(15, 23, 42, 0.8)",
-    color: "white",
-    outline: "none",
-    transition: "all 0.2s",
+  // Inline styles – no external CSS needed
+  const styles = {
+    container: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 50%, #831843 100%)",
+      position: "relative",
+      overflow: "hidden",
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    },
+    floatingBlob: (top, left, size, color, delay = "0s") => ({
+      position: "absolute",
+      top,
+      left,
+      width: size,
+      height: size,
+      background: color,
+      borderRadius: "50%",
+      filter: "blur(80px)",
+      opacity: 0.3,
+      animation: "float 6s ease-in-out infinite",
+      animationDelay: delay,
+    }),
+    logo: {
+      position: "absolute",
+      top: "20px",
+      left: "20px",
+      width: "120px",
+      cursor: "pointer",
+      transition: "transform 0.3s",
+      zIndex: 10,
+    },
+    form: {
+      position: "relative",
+      zIndex: 10,
+      background: "rgba(15, 23, 42, 0.8)",
+      backdropFilter: "blur(12px)",
+      padding: "32px",
+      borderRadius: "24px",
+      width: "400px",
+      maxWidth: "90%",
+      border: "1px solid rgba(255,255,255,0.1)",
+      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+      transition: "transform 0.3s, box-shadow 0.3s",
+      animation: shake ? "shake 0.3s ease-in-out" : "none",
+    },
+    title: {
+      fontSize: "28px",
+      fontWeight: "600",
+      textAlign: "center",
+      background: "linear-gradient(135deg, #a5b4fc, #f472b6)",
+      WebkitBackgroundClip: "text",
+      backgroundClip: "text",
+      color: "transparent",
+      marginBottom: "12px",
+    },
+    subtitle: {
+      textAlign: "center",
+      color: "#cbd5e1",
+      marginBottom: "32px",
+      fontSize: "14px",
+    },
+    otpContainer: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: "12px",
+      marginBottom: "32px",
+    },
+    otpInput: {
+      width: "100%",
+      height: "64px",
+      textAlign: "center",
+      fontSize: "28px",
+      fontWeight: "bold",
+      borderRadius: "12px",
+      border: "1px solid #334155",
+      backgroundColor: "#1e293b",
+      color: "white",
+      outline: "none",
+      transition: "all 0.2s",
+    },
+    button: {
+      width: "100%",
+      padding: "12px",
+      borderRadius: "12px",
+      fontWeight: "600",
+      fontSize: "16px",
+      color: "white",
+      background: "linear-gradient(135deg, #4f46e5, #db2777)",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "8px",
+      transition: "opacity 0.2s, transform 0.1s",
+      opacity: isLoading ? 0.7 : 1,
+    },
+    resendText: {
+      textAlign: "center",
+      color: "#94a3b8",
+      marginTop: "24px",
+      fontSize: "14px",
+    },
+    resendButton: {
+      background: "none",
+      border: "none",
+      color: "#818cf8",
+      cursor: "pointer",
+      fontSize: "14px",
+      fontWeight: "500",
+      paddingLeft: "4px",
+    },
+    spinner: {
+      width: "20px",
+      height: "20px",
+      border: "2px solid rgba(255,255,255,0.3)",
+      borderTopColor: "white",
+      borderRadius: "50%",
+      animation: "spin 0.8s linear infinite",
+    },
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float-reverse"></div>
-      </div>
+  // Inject keyframes into head once
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = `
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+      }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      .otp-focus:focus {
+        border-color: #a855f7;
+        box-shadow: 0 0 0 3px rgba(168,85,247,0.3);
+      }
+    `;
+    document.head.appendChild(styleSheet);
+    return () => document.head.removeChild(styleSheet);
+  }, []);
 
-      {/* Logo – with fallback */}
+  return (
+    <div style={styles.container}>
+      {/* Animated blobs */}
+      <div style={styles.floatingBlob("10%", "5%", "280px", "#4f46e5")} />
+      <div style={styles.floatingBlob("70%", "80%", "320px", "#db2777", "2s")} />
+      <div style={styles.floatingBlob("40%", "60%", "200px", "#f59e0b", "4s")} />
+
       <img
         onClick={() => navigate("/")}
         src={assets?.logo || "/placeholder-logo.png"}
-        alt="logo"
-        className="absolute top-5 left-5 sm:left-20 w-32 cursor-pointer transition-all duration-300 hover:scale-105 z-10"
+        alt="Logo"
+        style={styles.logo}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
       />
 
-      <form
-        onSubmit={handleSubmit}
-        className={`relative z-10 bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-96 border border-white/10 transition-all duration-300 hover:shadow-indigo-500/20 ${
-          shake ? "animate-shake" : ""
-        }`}
-        onPaste={handlePaste}
-      >
-        <h1 className="text-white text-2xl font-semibold text-center mb-4 bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
-          Email Verification
-        </h1>
+      <form onSubmit={handleSubmit} style={styles.form} onPaste={handlePaste}>
+        <h1 style={styles.title}>Email Verification</h1>
+        <p style={styles.subtitle}>Enter the 6-digit code sent to your email</p>
 
-        <p className="text-center mb-6 text-slate-300">
-          Enter the 6-digit code sent to your email
-        </p>
-
-        <div className="flex justify-between mb-8 gap-2">
-          {Array(6)
-            .fill("")
-            .map((_, index) => (
-              <input
-                key={index}
-                type="text"
-                maxLength={1}
-                required
-                ref={(el) => (inputRefs.current[index] = el)}
-                onInput={(e) => handleInput(e, index)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                className="otp-input"
-                style={inputStyle} // inline fallback in case CSS missing
-                autoFocus={index === 0}
-              />
-            ))}
+        <div style={styles.otpContainer}>
+          {Array(6).fill("").map((_, index) => (
+            <input
+              key={index}
+              type="text"
+              maxLength={1}
+              required
+              ref={(el) => (inputRefs.current[index] = el)}
+              onInput={(e) => handleInput(e, index)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              style={styles.otpInput}
+              className="otp-focus"
+              autoFocus={index === 0}
+            />
+          ))}
         </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-2 px-4 bg-gradient-to-r from-indigo-600 to-pink-600 rounded-lg font-semibold text-white hover:from-indigo-700 hover:to-pink-700 transition-all disabled:opacity-50"
-        >
+        <button type="submit" disabled={isLoading} style={styles.button}>
           {isLoading ? (
             <>
-              <div className="spinner w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div style={styles.spinner}></div>
               <span>Verifying...</span>
             </>
           ) : (
@@ -172,49 +279,23 @@ const EmailVerify = () => {
           )}
         </button>
 
-        <p className="text-center text-slate-400 text-sm mt-6">
+        <p style={styles.resendText}>
           Didn't receive the code?{" "}
           <button
             type="button"
             onClick={() => {
-              // Clear OTP inputs
               inputRefs.current.forEach((input) => {
                 if (input) input.value = "";
               });
               inputRefs.current[0]?.focus();
-              // You should call a resend OTP API here
               toast.info("New OTP has been sent to your email");
             }}
-            className="text-indigo-400 hover:text-indigo-300 transition-colors"
+            style={styles.resendButton}
           >
             Resend Code
           </button>
         </p>
       </form>
-
-      {/* Add required animations if missing */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes float-reverse {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(20px); }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-float-reverse { animation: float-reverse 6s ease-in-out infinite; }
-        .animate-shake { animation: shake 0.3s ease-in-out; }
-        .otp-input:focus {
-          border-color: #a855f7;
-          box-shadow: 0 0 0 2px rgba(168,85,247,0.3);
-        }
-      `}</style>
     </div>
   );
 };
