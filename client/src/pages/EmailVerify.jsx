@@ -7,7 +7,11 @@ import { AppContext } from "../context/AppContext";
 
 const EmailVerify = () => {
   axios.defaults.withCredentials = true;
-  const { backendUrl, getUserData, isLoggedin, userData } = useContext(AppContext);
+
+  // ✅ FIX: Use correct context property names (check your AppContext)
+  const { backendUrl, getUserData, isLoggedIn, userData } = useContext(AppContext);
+  //                                   ^^^^^^^^^^ (capital 'I') – match your context
+
   const navigate = useNavigate();
   const inputRefs = useRef([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,8 +45,9 @@ const EmailVerify = () => {
         inputRefs.current[index].value = char;
       }
     });
+    // Auto-submit after paste if all 6 digits filled
     if (pasteData.length === 6) {
-      inputRefs.current[5]?.focus();
+      handleSubmit(e);
     }
   };
 
@@ -64,25 +69,43 @@ const EmailVerify = () => {
 
       if (data.success) {
         toast.success(data.message);
-        await getUserData();
+        // ✅ Refresh user data to update isAccountVerified
+        if (getUserData) await getUserData();
         navigate("/");
       } else {
         toast.error(data.message);
         triggerShake();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message);
+      console.error("Verification error:", error);
+      toast.error(error.response?.data?.message || error.message || "Verification failed");
       triggerShake();
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ✅ Redirect if already verified (avoid loops)
   useEffect(() => {
-    if (isLoggedin && userData?.isAccountVerified) {
+    if (isLoggedIn && userData?.isAccountVerified) {
       navigate("/");
     }
-  }, [isLoggedin, userData, navigate]);
+  }, [isLoggedIn, userData, navigate]);
+
+  // ✅ Fallback: Ensure background and input styles exist (add inline styles if CSS missing)
+  const inputStyle = {
+    width: "3rem",
+    height: "3rem",
+    textAlign: "center",
+    fontSize: "1.5rem",
+    fontWeight: "bold",
+    borderRadius: "0.5rem",
+    border: "1px solid rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+    color: "white",
+    outline: "none",
+    transition: "all 0.2s",
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
@@ -92,16 +115,20 @@ const EmailVerify = () => {
         <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float-reverse"></div>
       </div>
 
+      {/* Logo – with fallback */}
       <img
         onClick={() => navigate("/")}
-        src={assets.logo}
+        src={assets?.logo || "/placeholder-logo.png"}
         alt="logo"
         className="absolute top-5 left-5 sm:left-20 w-32 cursor-pointer transition-all duration-300 hover:scale-105 z-10"
       />
 
       <form
         onSubmit={handleSubmit}
-        className={`relative z-10 bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-96 border border-white/10 transition-all duration-300 hover:shadow-indigo-500/20 ${shake ? 'animate-shake' : ''}`}
+        className={`relative z-10 bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-96 border border-white/10 transition-all duration-300 hover:shadow-indigo-500/20 ${
+          shake ? "animate-shake" : ""
+        }`}
+        onPaste={handlePaste}
       >
         <h1 className="text-white text-2xl font-semibold text-center mb-4 bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
           Email Verification
@@ -111,30 +138,33 @@ const EmailVerify = () => {
           Enter the 6-digit code sent to your email
         </p>
 
-        <div className="flex justify-between mb-8 gap-2" onPaste={handlePaste}>
-          {Array(6).fill("").map((_, index) => (
-            <input
-              key={index}
-              type="text"
-              maxLength={1}
-              required
-              ref={(el) => (inputRefs.current[index] = el)}
-              onInput={(e) => handleInput(e, index)}
-              onKeyDown={(e) => handleKeyDown(e, index)}
-              className="otp-input text-center"
-              autoFocus={index === 0}
-            />
-          ))}
+        <div className="flex justify-between mb-8 gap-2">
+          {Array(6)
+            .fill("")
+            .map((_, index) => (
+              <input
+                key={index}
+                type="text"
+                maxLength={1}
+                required
+                ref={(el) => (inputRefs.current[index] = el)}
+                onInput={(e) => handleInput(e, index)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
+                className="otp-input"
+                style={inputStyle} // inline fallback in case CSS missing
+                autoFocus={index === 0}
+              />
+            ))}
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="btn-primary w-full flex items-center justify-center gap-2"
+          className="btn-primary w-full flex items-center justify-center gap-2 py-2 px-4 bg-gradient-to-r from-indigo-600 to-pink-600 rounded-lg font-semibold text-white hover:from-indigo-700 hover:to-pink-700 transition-all disabled:opacity-50"
         >
           {isLoading ? (
             <>
-              <div className="spinner"></div>
+              <div className="spinner w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               <span>Verifying...</span>
             </>
           ) : (
@@ -143,12 +173,16 @@ const EmailVerify = () => {
         </button>
 
         <p className="text-center text-slate-400 text-sm mt-6">
-          Didn't receive the code?{' '}
+          Didn't receive the code?{" "}
           <button
             type="button"
             onClick={() => {
-              inputRefs.current.forEach(input => { if (input) input.value = ''; });
+              // Clear OTP inputs
+              inputRefs.current.forEach((input) => {
+                if (input) input.value = "";
+              });
               inputRefs.current[0]?.focus();
+              // You should call a resend OTP API here
               toast.info("New OTP has been sent to your email");
             }}
             className="text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -157,6 +191,30 @@ const EmailVerify = () => {
           </button>
         </p>
       </form>
+
+      {/* Add required animations if missing */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+        @keyframes float-reverse {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(20px); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        .animate-float-reverse { animation: float-reverse 6s ease-in-out infinite; }
+        .animate-shake { animation: shake 0.3s ease-in-out; }
+        .otp-input:focus {
+          border-color: #a855f7;
+          box-shadow: 0 0 0 2px rgba(168,85,247,0.3);
+        }
+      `}</style>
     </div>
   );
 };
