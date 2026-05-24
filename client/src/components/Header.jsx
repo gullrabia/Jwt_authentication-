@@ -6,7 +6,7 @@ const Header = () => {
   const { userData } = useContext(AppContext);
   const [displayText, setDisplayText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
-  const fullText = `Hey ${userData?.name ?? "Developer"} 👋`;
+  const fullText = `Hey ${userData?.name ?? "Developer"} `;
 
   useEffect(() => {
     let i = 0;
@@ -58,12 +58,12 @@ const Header = () => {
       </h2>
 
       <p className='mt-6 max-w-md text-gray-300 text-lg backdrop-blur-sm bg-white/5 px-6 py-3 rounded-full animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100'>
-        Let's start with a quick product tour — we'll have you up and running in no time.
+        Let's start with a quick product tour  we'll have you up and running in no time.
       </p>
 
       <button className='group relative mt-8 overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold px-10 py-3 rounded-full shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-indigo-500/50 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200'>
         <span className='relative z-10 flex items-center gap-2'>
-          🚀 Get Started
+           Get Started
           <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
           </svg>

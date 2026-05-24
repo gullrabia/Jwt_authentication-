@@ -74,7 +74,7 @@ const Navbar = () => {
                                             }} 
                                             className='px-5 py-3 hover:bg-indigo-600/50 cursor-pointer transition-all flex items-center gap-3 group'
                                         >
-                                            <span className='text-lg group-hover:scale-110 transition-transform'>✉️</span>
+                                            <span className='text-lg group-hover:scale-110 transition-transform'></span>
                                             <span>Verify Email</span>
                                             {!userData.isAccountVerified && (
                                                 <span className='ml-2 w-2 h-2 bg-yellow-500 rounded-full animate-pulse'></span>
@@ -88,7 +88,7 @@ const Navbar = () => {
                                         }} 
                                         className='px-5 py-3 hover:bg-red-600/50 cursor-pointer transition-all flex items-center gap-3 group'
                                     >
-                                        <span className='text-lg group-hover:scale-110 transition-transform'>🚪</span>
+                                        <span className='text-lg group-hover:scale-110 transition-transform'></span>
                                         <span>Logout</span>
                                     </li>
                                 </ul>
